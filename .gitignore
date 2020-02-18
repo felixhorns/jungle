@@ -9,3 +9,5 @@ jungle/resources/FitnessInference/toydata/
 *.pyc
 *~
 *.log
+examples/.ipynb_checkpoints/
+*-checkpoint.ipynb
