@@ -1,0 +1,11 @@
+# Paths
+migration/
+jungle/resources/betatree/example_SFS/
+jungle/resources/betatree/example_trees/
+jungle/resources/FitnessInference/examples/
+jungle/resources/FitnessInference/flu/
+jungle/resources/FitnessInference/toydata/
+
+*.pyc
+*~
+*.log
