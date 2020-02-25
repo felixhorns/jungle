@@ -36,6 +36,8 @@ class Tree:
         self._variance_descendants = None
         self._gini_descendants = None
         self.T_fitness = None
+        self.is_depth_annotated = False
+        self.colless = None
 
     def __len__(self):
         return len(self.T)
@@ -79,12 +81,12 @@ class Tree:
 
     def annotate_standard_node_features(self):
         """ Annotate each node of Tree with standard features:
-            depth, depth_rank, num_children, num_descendants
+            depth, depth_rank, depth_normalized, num_children, num_descendants
         """
 
         for depth_rank, node in enumerate(self.T.traverse("levelorder")):
 
-            depth = node.get_distance(self.T) # depth is distance to root
+            depth = node.get_distance(self.T)  # depth is distance to root
             setattr(node, "depth", depth)
             node.features.add("depth")
 
@@ -103,6 +105,17 @@ class Tree:
             setattr(node, "num_leaf_descendants", num_leaf_descendants)
             node.features.add("num_leaf_descendants")
 
+        self.is_depth_annotated = True  # set flag to indicate that depth has been calculated
+
+        max_depth = self.max_depth()
+
+        # calculate normalized depth
+        for _, node in enumerate(self.T.traverse("levelorder")):
+
+            depth_normalized = node.depth / float(max_depth)
+            setattr(node, "depth_normalized", depth_normalized)
+            node.features.add("depth_normalized")
+
     def node_features(self, subset=None):
         """ Get DataFrame of features for each node """
 
@@ -115,7 +128,7 @@ class Tree:
 
         # Get features and write into DataFrame
 
-        result = pd.DataFrame() # DataFrame of features
+        result = pd.DataFrame()  # DataFrame of features
 
         for attr in features:
 
@@ -135,6 +148,68 @@ class Tree:
 
         return result
 
+    def annotate_imbalance(self):
+        """ Annotate each node of Tree with its imbalance I.
+            If N is a list of the number of descendants of each child of the node, then
+            I = max(N) / sum(N).
+        """
+
+        for _, node in enumerate(self.T.traverse("levelorder")):
+
+            if node.is_leaf():
+                # imbalance of a leaf is not defined
+                imbalance = np.nan
+            else:
+                # get number of descendants of each child N
+                num_descendants_of_children = [len(x) for x in node.get_children()]
+                # calculate imbalance I = max(N) / sum(N)
+                imbalance = max(num_descendants_of_children) / float(sum(num_descendants_of_children))
+
+            setattr(node, "imbalance", imbalance)
+            node.features.add("imbalance")
+
+    def annotate_colless(self):
+        """ Annotate each node of Tree with its Colless index. """
+
+        for _, node in enumerate(self.T.traverse("postorder")):
+
+            if node.is_leaf():
+
+                # colless of a leaf is not defined
+                difference_num_descendants = np.nan                
+                colless = 0
+
+            else:
+
+                children = node.get_children()
+
+                if len(children) != 2:
+                    print "Error: Tree must be binary to calculate Colless index. Use Tree.resolve_polytomy() to binarize."
+                    return None
+
+                child1 = children[0]
+                child2 = children[1]
+                difference_num_descendants = np.abs(child1.num_descendants - child2.num_descendants)
+                colless = difference_num_descendants + child1.colless + child2.colless
+
+            setattr(node, "difference_num_descendants", difference_num_descendants)
+            node.features.add("difference_num_descendants")                
+                
+            setattr(node, "colless", colless)
+            node.features.add("colless")
+
+        # Set attribute to be accessible from top-level Tree object
+        self.colless = self.T.colless
+            
+    def max_depth(self):
+        """ Get maximum depth of the tree """
+        if self.is_depth_annotated is False:
+            print("Error: Tree.annotate_standard_node_features() must be run before max_depth().")
+            return None
+        else:
+            depths = [node.depth for node in self.T.traverse()]
+            return max(depths)
+
     def total_branch_length(self):
         """ Get total branch length of tree """
         return np.sum([node.dist for node in self.T.traverse()])
@@ -146,6 +221,11 @@ class Tree:
         for node in self.T.traverse():
             node.dist = node.dist * scaling_factor
 
+    def resolve_polytomy(self):
+        """ Resolve all polytomies in Tree by creating an arbitrary dicotomic structure """
+        self.T.resolve_polytomy()
+        self.T.ladderize()
+            
     def site_frequency_spectrum(self):
         """ Get site frequency spectrum (SFS) of Tree """
         if self._site_frequency_spectrum is None:

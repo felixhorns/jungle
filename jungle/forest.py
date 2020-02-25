@@ -93,6 +93,20 @@ class Forest:
         for tree in self.trees:
             tree.annotate_standard_node_features()
 
+
+    def annotate_imbalance(self):
+        """ Annotate each node of each Tree in Forest with its imbalance I.
+            If N is a list of the number of descendants of each child of the node, then
+            I = max(N) / sum(N).
+        """
+        for tree in self.trees:
+            tree.annotate_imbalance()
+
+    def annotate_colless(self):
+        """ Annotate each node of each Tree in Forest with its Colless index. """
+        for tree in self.trees:
+            tree.annotate_colless()
+            
     def node_features(self, subset=None):
         """ Get DataFrame of features for each node of each Tree in Forest """
         features = [tree.node_features(subset) for tree in self.trees]
@@ -112,6 +126,11 @@ class Forest:
         for tree in self.trees:
             tree.rescale(total_branch_length=total_branch_length)
 
+    def resolve_polytomy(self):
+        """ Resolve all polytomies by creating an arbitrary dicotomic structure in all Trees in Forest """
+        for tree in self.trees:
+            tree.resolve_polytomy()
+            
     def site_frequency_spectrum(self):
         """ Get site frequency spectrum (SFS) of all Trees in Forest """
         self._site_frequency_spectrum = []
