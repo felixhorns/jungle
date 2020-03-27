@@ -53,14 +53,14 @@ class SFS:
             self.bin_centers = (self.bin_edges[1:] + self.bin_edges[:-1]) / 2
 
         # Perform binning
-        freqs = np.arange(1, len(self.counts) + 1) / float(len(self.counts)) # frequency of each count index (i/n_leaves)
-        freq_bins = np.digitize(freqs, self.bin_edges, right=True) # bin that each frequency belongs to
-        self.binned = np.bincount(freq_bins, weights=self.counts, minlength=len(self.bin_centers)) # sum mutations in each bin
+        freqs = np.arange(1, len(self.counts) + 1) / float(len(self.counts))  # frequency of each count index (i/n_leaves)
+        freq_bins = np.digitize(freqs, self.bin_edges, right=True)  # bin that each frequency belongs to
+        self.binned = np.bincount(freq_bins, weights=self.counts, minlength=len(self.bin_centers))  # sum mutations in each bin
 
         if max(self.bin_edges) >= 1.0:
-            self.binned = self.binned[1:] # drop zero bin
+            self.binned = self.binned[1:]  # drop zero bin
         else:
-            self.binned = self.binned[1:-1] # drop zero and one bin
+            self.binned = self.binned[1:-1]  # drop zero and one bin
 
         # self.binned, _ = np.histogram(self.counts, bins=self.bin_edges)  # count mutations per bin
 
@@ -97,7 +97,7 @@ class SFS:
         """ Calculate Zeng's E from the mutation counts (site frequency spectrum) """
         n = self.counts.shape[0]  # total number of individuals population
         idx = np.array(range(n))  # number of individuals sharing a mutation
-        a_n = np.log(n) + self.EULERS_CONSTANT + 1/(2*n) - (1/(12*(n**2))) # (n-1)th harmonic number
+        a_n = np.log(n) + self.EULERS_CONSTANT + 1/(2*n) - (1/(12*(n**2)))  # (n-1)th harmonic number
         theta_L = sum(idx * self.counts) / (n - 1)
         theta_W = sum(self.counts) / a_n
         self._zengs_E = theta_L - theta_W
@@ -112,7 +112,7 @@ class SFS:
         """ Calculate Tajima's D from the mutation counts (site frequency spectrum) """
         n = self.counts.shape[0]  # total number of individuals population
         idx = np.array(range(n))  # number of individuals sharing a mutation
-        a_n = np.log(n) + self.EULERS_CONSTANT + 1/(2*n) - (1/(12*(n**2))) # (n-1)th harmonic number
+        a_n = np.log(n) + self.EULERS_CONSTANT + 1/(2*n) - (1/(12*(n**2)))  # (n-1)th harmonic number
         theta_W = sum(self.counts) / a_n
         theta_pi = sum(2 * idx * (n - idx) * self.counts) / (n * (n - 1))
         self._tajimas_D = theta_pi - theta_W
@@ -127,7 +127,7 @@ class SFS:
         """ Calculate Ferretti's L from the mutation counts (site frequency spectrum) """
         n = self.counts.shape[0]  # total number of individuals population
         idx = np.array(range(n))  # number of individuals sharing a mutation
-        a_n = np.log(n) + self.EULERS_CONSTANT + 1/(2*n) - (1/(12*(n**2))) # (n-1)th harmonic number
+        a_n = np.log(n) + self.EULERS_CONSTANT + 1/(2*n) - (1/(12*(n**2)))  # (n-1)th harmonic number
         theta_W = sum(self.counts) / a_n
         theta_H = sum(2 * idx**2 * self.counts) / (n * (n - 1))
         self._ferrettis_L = theta_W - theta_H
