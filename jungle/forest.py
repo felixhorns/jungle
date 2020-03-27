@@ -227,6 +227,10 @@ class Forest:
     def selection_on_subclones(self):
         pass
 
+    def pvalue(self, attribute, model, strict_bounds=True, invert_cdf=False, suffix=None):
+        for tree in self.trees:
+            tree.pvalue(attribute, model, strict_bounds, invert_cdf, suffix)
+    
     def color(self, *args, **kwargs):
         """ Color nodes in all Trees of Forest by an attribute """
         for tree in self.trees:

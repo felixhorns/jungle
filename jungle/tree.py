@@ -84,20 +84,22 @@ class Tree:
             depth, depth_rank, depth_normalized, num_children, num_descendants
         """
 
-        for depth_rank, node in enumerate(self.T.traverse("levelorder")):
+        for depth_rank, node in enumerate(self.T.traverse("postorder")):
 
             depth = node.get_distance(self.T)  # depth is distance to root
             setattr(node, "depth", depth)
             node.features.add("depth")
 
-            setattr(node, "depth_rank", depth_rank)
-            node.features.add("depth_rank")
+            # depth rank has been removed because T.traverse("postorder") is much more efficient
+            # and rank now must be calculated separately
+            # setattr(node, "depth_rank", depth_rank)
+            # node.features.add("depth_rank")
 
             num_children = len(node.get_children())
             setattr(node, "num_children", num_children)
             node.features.add("num_children")
 
-            num_descendants = len(node.get_children()) + sum([len(x.get_children()) for x in node.iter_descendants()])
+            num_descendants = len(node.get_children()) + sum(child.num_descendants for child in node.get_children())
             setattr(node, "num_descendants", num_descendants)
             node.features.add("num_descendants")
 
@@ -299,8 +301,8 @@ class Tree:
             # Copy each attribute
             for attr in ['mean_fitness', 'var_fitness', 'expansion_score', 'rank']:
                 if hasattr(node, attr):
-                    setattr(node_ete3, attr, getattr(node, attr)) # set attribute of node
-                    node_ete3.features.add(attr) # add attribute to list of features for node
+                    setattr(node_ete3, attr, getattr(node, attr))  # set attribute of node
+                    node_ete3.features.add(attr)  # add attribute to list of features for node
 
         # Delete fitness object
         # Unfortunately, the node_ranking class raises errors when pickled and cannot be pickled
@@ -362,6 +364,37 @@ class Tree:
 
         return trees_forward
 
+    def pvalue(self, attribute, model, strict_bounds=True, invert_cdf=False, suffix=None):
+        """ Calculate P value of attribute under model for each node.
+            Stores result in [attribute]_pvalue_[suffix] or
+            [attribute]_pvalue_[model.name] if suffix is None.
+        """
+
+        if suffix is None:
+            suffix = model.name
+
+        if model.name is None and suffix is None:
+            suffix = ""
+            print("Warning: suffix and model.name are None, so the pvalue columns will be labeled with empty suffix")
+
+        label_pvalue = attribute + "_pvalue_" + suffix
+        label_model_mean = attribute + "_model_mean_" + suffix        
+
+        for node in self.T.traverse("levelorder"):
+
+            x = getattr(node, attribute)
+            size = getattr(node, "num_leaf_descendants")
+            pvalue = model.pvalue(x=x, size=size, strict_bounds=strict_bounds, invert_cdf=invert_cdf)
+            model_mean = model.model_mean(size=size, strict_bounds=strict_bounds)
+
+            setattr(node, label_pvalue, pvalue)
+            node.features.add(label_pvalue)
+
+            setattr(node, label_model_mean, model_mean)
+            node.features.add(label_model_mean)            
+
+        return None
+    
     def color(self, by=None, cmap=mpl.cm.coolwarm, norm=mpl.colors.Normalize(), fill_leaves=True):
         """ Color nodes in tree by an attribute """
 
