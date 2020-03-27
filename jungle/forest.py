@@ -86,6 +86,24 @@ class Forest:
             if os.path.exists(outfile_tree):
                 os.remove(outfile_tree)
 
+    def concat(self, other):
+        """ Concatenate two Forests. Concatenates lists of trees and attributes. """
+
+        trees = self.trees + other.trees
+        name = None
+        params = None
+
+        F_new = Forest(trees, name, params)
+
+        # Concatenate all list-like attributes
+        attrs = ["_site_frequency_spectrum", "_fay_and_wus_H",
+                 "_zengs_E", "_tajimas_D", "_ferrettis_L"]
+        for attr in attrs:
+            attr_value = _concat_lists_safe(getattr(self, attr), getattr(other, attr))
+            setattr(F_new, attr, attr_value)  # set new attribute to fit parameters
+
+        return F_new
+
     def annotate_standard_node_features(self):
         """ Annotate each node of each Tree in Forest with standard features:
             depth, depth_rank, num_children, num_descendants
@@ -269,3 +287,17 @@ def unique_list_str(L):
             count[s] = 1
         L_unique.append(s_unique)
     return L_unique
+
+def _concat_lists_safe(A, B):
+    """ Safely concatenate two lists if one or both may be None """
+
+    if A is None and B is None:
+        return None
+    elif isinstance(A, list) and B is None:
+        return A
+    elif isinstance(B, list) and A is None:
+        return B
+    elif isinstance(A, list) and isinstance(B, list):
+        return A + B
+    else:
+        raise TypeError("A and B must be lists or None")
