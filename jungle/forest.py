@@ -66,15 +66,15 @@ class Forest:
                     trees.append(t)
         return Forest(trees, name, params)
 
-    def to_newick(self, outfile):
+    def to_newick(self, outfile, **kwargs):
         """ Write Tree to a gzipped tar of Newick files """
-        # This currently omits features
         # format=3 includes all branches with names (but no supports)
+        # To export features, use attribute features=[feature1, feature2]
 
         # Write Trees to Newick files
         outfile_trees = ["tree" + str(i) for i in range(len(self.trees))]
         for tree, outfile_tree in zip(self.trees, outfile_trees):
-            tree.to_newick(outfile=outfile_tree)
+            tree.to_newick(outfile=outfile_tree, **kwargs)
 
         # Make tar.gz out of Newick files
         with tarfile.open(outfile, "w:gz") as tar:

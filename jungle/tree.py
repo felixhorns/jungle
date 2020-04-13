@@ -73,11 +73,11 @@ class Tree:
         Tree.name_internal_nodes(T)
         return Tree(T, name, params)
 
-    def to_newick(self, outfile):
+    def to_newick(self, outfile, **kwargs):
         """ Write Tree to Newick """
-        # This currently omits features
         # format=3 includes all branches with names (but no supports)
-        self.T.write(outfile=outfile, format=3)
+        # To export features, use attribute features=[feature1, feature2]
+        self.T.write(outfile=outfile, format=3, **kwargs)
 
     def annotate_standard_node_features(self):
         """ Annotate each node of Tree with standard features:
@@ -194,14 +194,20 @@ class Tree:
                 difference_num_descendants = np.abs(child1.num_descendants - child2.num_descendants)
                 colless = difference_num_descendants + child1.colless + child2.colless
 
+            log10p_colless = np.log10(colless + 1)
+
             setattr(node, "difference_num_descendants", difference_num_descendants)
             node.features.add("difference_num_descendants")                
                 
             setattr(node, "colless", colless)
             node.features.add("colless")
 
+            setattr(node, "log10p_colless", log10p_colless)
+            node.features.add("log10p_colless")
+
         # Set attribute to be accessible from top-level Tree object
         self.colless = self.T.colless
+        self.log10p_colless = self.T.log10p_colless
             
     def max_depth(self):
         """ Get maximum depth of the tree """
